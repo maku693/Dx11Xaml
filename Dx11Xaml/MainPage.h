@@ -5,6 +5,9 @@
 namespace winrt::Dx11Xaml::implementation {
 struct MainPage : MainPageT<MainPage> {
   MainPage();
+
+  void OnLoaded([[maybe_unused]] IInspectable const &,
+                [[maybe_unused]] Windows::UI::Xaml::RoutedEventArgs const &);
 };
 } // namespace winrt::Dx11Xaml::implementation
 
