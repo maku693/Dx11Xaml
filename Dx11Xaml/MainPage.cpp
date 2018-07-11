@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "MainPage.h"
 #include <array>
@@ -17,10 +17,9 @@ MainPage::MainPage() {
 
 void MainPage::OnLoaded([[maybe_unused]] IInspectable const &sender,
                         [[maybe_unused]] RoutedEventArgs const &) {
-  const std::array<D3D_FEATURE_LEVEL, 6> feature_levels{
+  const std::array<D3D_FEATURE_LEVEL, 4> feature_levels{
       D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_11_1,
-      D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1, D3D_FEATURE_LEVEL_10_0,
-  };
+      D3D_FEATURE_LEVEL_11_0};
   com_ptr<ID3D11Device> device{};
   com_ptr<ID3D11DeviceContext> context{};
   check_hresult(D3D11CreateDevice(
