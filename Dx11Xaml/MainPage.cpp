@@ -15,7 +15,7 @@ MainPage::MainPage() {
   Loaded({this, &MainPage::OnLoaded});
 }
 
-void MainPage::OnLoaded([[maybe_unused]] IInspectable const &sender,
+void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
                         [[maybe_unused]] RoutedEventArgs const &) {
   const std::array<D3D_FEATURE_LEVEL, 4> feature_levels{
       D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_11_1,
