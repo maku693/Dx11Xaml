@@ -24,7 +24,7 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   com_ptr<ID3D11DeviceContext> context{};
   check_hresult(D3D11CreateDevice(
       nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG,
-      feature_levels.data(), feature_levels.size(), D3D11_SDK_VERSION,
+      feature_levels.data(), static_cast<UINT>(feature_levels.size()), D3D11_SDK_VERSION,
       device.put(), nullptr, context.put()));
 
   com_ptr<IDXGIFactory2> dxgi_factory{};
