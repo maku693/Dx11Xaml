@@ -1,13 +1,11 @@
 #include "pch.h"
 
 #include "MainPage.h"
-#include <array>
-#include <d3d11_4.h>
-#include <dxgi1_6.h>
 
 using namespace winrt;
 using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml;
+using namespace Windows::UI::Xaml::Media;
 using namespace Dx11Xaml::implementation;
 
 MainPage::MainPage() {
@@ -20,12 +18,10 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   const std::array<D3D_FEATURE_LEVEL, 4> feature_levels{
       D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_11_1,
       D3D_FEATURE_LEVEL_11_0};
-  com_ptr<ID3D11Device> device{};
-  com_ptr<ID3D11DeviceContext> context{};
   check_hresult(D3D11CreateDevice(
       nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG,
-      feature_levels.data(), static_cast<UINT>(feature_levels.size()), D3D11_SDK_VERSION,
-      device.put(), nullptr, context.put()));
+      feature_levels.data(), static_cast<UINT>(feature_levels.size()),
+      D3D11_SDK_VERSION, device.put(), nullptr, context.put()));
 
   com_ptr<IDXGIFactory2> dxgi_factory{};
   check_hresult(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG,
@@ -42,7 +38,6 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   swapchain_desc.Scaling = DXGI_SCALING_STRETCH;
   swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
 
-  com_ptr<IDXGISwapChain1> swapchain{};
   check_hresult(dxgi_factory->CreateSwapChainForComposition(
       device.get(), &swapchain_desc, nullptr, swapchain.put()));
 
@@ -55,14 +50,18 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{};
   rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
   rtv_desc.Format = swapchain_desc.Format;
-  com_ptr<ID3D11RenderTargetView> rtv{};
   check_hresult(
       device->CreateRenderTargetView(back_buffer.get(), &rtv_desc, rtv.put()));
-  const auto rtvs = rtv.get();
-  context->OMSetRenderTargets(1, &rtvs, nullptr);
+  auto prtv = rtv.get();
+  context->OMSetRenderTargets(1, &prtv, nullptr);
 
-  const std::array<float, 4> clear_color{0, 0, 0, 1};
-  context->ClearRenderTargetView(rtv.get(), clear_color.data());
-
-  swapchain->Present(0, 0);
+  CompositionTarget::Rendering({this, &MainPage::OnRendering});
 }
+
+void MainPage::OnRendering([[maybe_unused]] IInspectable const &,
+                           [[maybe_unused]] IInspectable const &) {
+  context->ClearRenderTargetView(rtv.get(), clear_color.data());
+  check_hresult(swapchain->Present(1, 0));
+}
+
+const std::array<float, 4> MainPage::clear_color{0, 0, 0, 1};
