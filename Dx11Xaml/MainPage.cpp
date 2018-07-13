@@ -52,8 +52,10 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   rtv_desc.Format = swapchain_desc.Format;
   check_hresult(
       device->CreateRenderTargetView(back_buffer.get(), &rtv_desc, rtv.put()));
-  auto prtv = rtv.get();
-  context->OMSetRenderTargets(1, &prtv, nullptr);
+
+  const std::array<ID3D11RenderTargetView *, 1> rtvs{rtv.get()};
+  context->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(),
+                              nullptr);
 
   CompositionTarget::Rendering({this, &MainPage::OnRendering});
 }
