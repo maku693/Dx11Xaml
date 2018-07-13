@@ -16,6 +16,7 @@ struct MainPage : MainPageT<MainPage> {
   com_ptr<ID3D11DeviceContext> context;
   com_ptr<IDXGISwapChain1> swapchain;
   com_ptr<ID3D11RenderTargetView> rtv;
+  com_ptr<ID3D11DepthStencilView> dsv;
 
   static const std::array<float, 4> clear_color;
 };

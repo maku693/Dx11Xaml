@@ -48,14 +48,31 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   check_hresult(swapchain->GetBuffer(0, IID_PPV_ARGS(back_buffer.put())));
 
   D3D11_RENDER_TARGET_VIEW_DESC rtv_desc{};
-  rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
   rtv_desc.Format = swapchain_desc.Format;
+  rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
   check_hresult(
       device->CreateRenderTargetView(back_buffer.get(), &rtv_desc, rtv.put()));
 
+  D3D11_TEXTURE2D_DESC depth_buffer_desc{};
+  depth_buffer_desc.Width = swapchain_desc.Width;
+  depth_buffer_desc.Height = swapchain_desc.Height;
+  depth_buffer_desc.MipLevels = 1;
+  depth_buffer_desc.ArraySize = 1;
+  depth_buffer_desc.Format = DXGI_FORMAT_R16_TYPELESS;
+  depth_buffer_desc.SampleDesc.Count = 1;
+  depth_buffer_desc.SampleDesc.Quality = 0;
+  depth_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+  depth_buffer_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+  com_ptr<ID3D11Texture2D> depth_buffer{};
+  check_hresult(device->CreateTexture2D(&depth_buffer_desc, nullptr, depth_buffer.put()));
+
+  D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc{};
+  dsv_desc.Format = DXGI_FORMAT_D16_UNORM;
+  dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+  check_hresult(device->CreateDepthStencilView(depth_buffer.get(), &dsv_desc, dsv.put()));
+
   const std::array<ID3D11RenderTargetView *, 1> rtvs{rtv.get()};
-  context->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(),
-                              nullptr);
+  context->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), dsv.get());
 
   CompositionTarget::Rendering({this, &MainPage::OnRendering});
 }
@@ -63,6 +80,7 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
 void MainPage::OnRendering([[maybe_unused]] IInspectable const &,
                            [[maybe_unused]] IInspectable const &) {
   context->ClearRenderTargetView(rtv.get(), clear_color.data());
+  context->ClearDepthStencilView(dsv.get(), D3D11_CLEAR_DEPTH, 1, 0);
   check_hresult(swapchain->Present(1, 0));
 }
 
