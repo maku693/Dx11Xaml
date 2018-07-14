@@ -19,11 +19,10 @@ struct MainPage : MainPageT<MainPage> {
   com_ptr<IDXGISwapChain1> swapchain;
   com_ptr<ID3D11RenderTargetView> rtv;
   com_ptr<ID3D11DepthStencilView> dsv;
-
   com_ptr<ID3D11VertexShader> vertex_shader;
   com_ptr<ID3D11PixelShader> pixel_shader;
-
-  static const std::array<float, 4> clear_color;
+  com_ptr<ID3D11InputLayout> input_layout;
+  com_ptr<ID3D11Buffer> vertex_buffer;
 };
 } // namespace winrt::Dx11Xaml::implementation
 
