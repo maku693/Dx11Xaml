@@ -3,9 +3,12 @@
 #include "MainPage.h"
 
 using namespace winrt;
+using namespace Windows::ApplicationModel;
 using namespace Windows::Foundation;
 using namespace Windows::UI::Xaml;
 using namespace Windows::UI::Xaml::Media;
+using namespace Windows::Storage;
+using namespace Windows::Storage::Streams;
 using namespace Dx11Xaml::implementation;
 
 MainPage::MainPage() {
@@ -15,6 +18,19 @@ MainPage::MainPage() {
 
 void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
                         [[maybe_unused]] RoutedEventArgs const &) {
+  LoadResources().Completed([this](auto, auto) {
+    CompositionTarget::Rendering({this, &MainPage::OnRendering});
+  });
+}
+
+void MainPage::OnRendering([[maybe_unused]] IInspectable const &,
+                           [[maybe_unused]] IInspectable const &) {
+  context->ClearRenderTargetView(rtv.get(), clear_color.data());
+  context->ClearDepthStencilView(dsv.get(), D3D11_CLEAR_DEPTH, 1, 0);
+  check_hresult(swapchain->Present(1, 0));
+}
+
+IAsyncAction MainPage::LoadResources() {
   const std::array<D3D_FEATURE_LEVEL, 4> feature_levels{
       D3D_FEATURE_LEVEL_12_1, D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_11_1,
       D3D_FEATURE_LEVEL_11_0};
@@ -64,24 +80,38 @@ void MainPage::OnLoaded([[maybe_unused]] IInspectable const &,
   depth_buffer_desc.Usage = D3D11_USAGE_DEFAULT;
   depth_buffer_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
   com_ptr<ID3D11Texture2D> depth_buffer{};
-  check_hresult(device->CreateTexture2D(&depth_buffer_desc, nullptr, depth_buffer.put()));
+  check_hresult(
+      device->CreateTexture2D(&depth_buffer_desc, nullptr, depth_buffer.put()));
 
   D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc{};
   dsv_desc.Format = DXGI_FORMAT_D16_UNORM;
   dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-  check_hresult(device->CreateDepthStencilView(depth_buffer.get(), &dsv_desc, dsv.put()));
+  check_hresult(
+      device->CreateDepthStencilView(depth_buffer.get(), &dsv_desc, dsv.put()));
 
   const std::array<ID3D11RenderTargetView *, 1> rtvs{rtv.get()};
-  context->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), dsv.get());
+  context->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(),
+                              dsv.get());
 
-  CompositionTarget::Rendering({this, &MainPage::OnRendering});
-}
+  const auto installed_folder = Package::Current().InstalledLocation();
+  const auto vs_file =
+      co_await installed_folder.GetFileAsync(L"VertexShader.cso");
+  const auto ps_file =
+      co_await installed_folder.GetFileAsync(L"PixelShader.cso");
 
-void MainPage::OnRendering([[maybe_unused]] IInspectable const &,
-                           [[maybe_unused]] IInspectable const &) {
-  context->ClearRenderTargetView(rtv.get(), clear_color.data());
-  context->ClearDepthStencilView(dsv.get(), D3D11_CLEAR_DEPTH, 1, 0);
-  check_hresult(swapchain->Present(1, 0));
+  const auto vs_file_buffer = co_await FileIO::ReadBufferAsync(vs_file);
+  std::vector<uint8_t> vs_file_data{};
+  DataReader::FromBuffer(vs_file_buffer).ReadBytes(vs_file_data);
+
+  const auto ps_file_buffer = co_await FileIO::ReadBufferAsync(ps_file);
+  std::vector<uint8_t> ps_file_data{};
+  DataReader::FromBuffer(ps_file_buffer).ReadBytes(ps_file_data);
+
+  check_hresult(device->CreateVertexShader(
+      vs_file_data.data(), vs_file_data.size(), nullptr, vertex_shader.put()));
+
+  check_hresult(device->CreatePixelShader(
+      ps_file_data.data(), ps_file_data.size(), nullptr, pixel_shader.put()));
 }
 
 const std::array<float, 4> MainPage::clear_color{0, 0, 0, 1};

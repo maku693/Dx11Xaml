@@ -12,11 +12,16 @@ struct MainPage : MainPageT<MainPage> {
   void OnRendering([[maybe_unused]] IInspectable const &,
                    [[maybe_unused]] IInspectable const &);
 
+  Windows::Foundation::IAsyncAction LoadResources();
+
   com_ptr<ID3D11Device> device;
   com_ptr<ID3D11DeviceContext> context;
   com_ptr<IDXGISwapChain1> swapchain;
   com_ptr<ID3D11RenderTargetView> rtv;
   com_ptr<ID3D11DepthStencilView> dsv;
+
+  com_ptr<ID3D11VertexShader> vertex_shader;
+  com_ptr<ID3D11PixelShader> pixel_shader;
 
   static const std::array<float, 4> clear_color;
 };
